@@ -15,10 +15,28 @@ const int pHcalibrationVoltage = 2.5;
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
+//temperature sensor setup
+float RawValue=0;
+float RawHigh = 88.62;
+float RawLow = 4.56;
+float ReferenceHigh = 99.99;
+float ReferenceLow = 0;
+float RawRange = RawHigh - RawLow;
+float ReferenceRange = ReferenceHigh - ReferenceLow;
+
+const int numReadings = 5;  // Number of readings to average
+int readings[numReadings];  // Array to store the sensor readings
+int readIndex = 0;  // Index for the current reading
+long total = 0;  // Running total of readings
+float average = 0.0;  // Calculated average
+
 
 void setup() {
   Serial.begin(9600);
   lcd.begin(16, 2); 
+   for(int i=0; i<numReadings; i++){
+    readings[i]=0;
+  } 
 
 }
 
@@ -71,9 +89,9 @@ void fetching() {
 
 // code for pH value sensor
 void pHsensor() {
-  int pHvalue = analogRead(pHsensorPin);
+  int pHvalue = ***ogRead(pHsensorPin);
 
-  // analog value to voltage
+  // ***og value to voltage
   float voltage = pHvalue * (5.0 / 1023.0);
 
   float pH = pHcalibrationValue + ((voltage - pHcalibrationVoltage) * (-5.0 / 1.65));
@@ -90,7 +108,7 @@ void pHsensor() {
 
 // code for soil moisture sensor
 void moistureSensor() {
-  int moisture = analogRead(moistureSensorPin);
+  int moisture = ***ogRead(moistureSensorPin);
   int moisturePercent = map(moisture, minValue, maxValue, 0, 100);
 
   Serial.print("Moisture Percentage : ");
@@ -103,16 +121,27 @@ void moistureSensor() {
   lcd.print("%");
 }
 
-// demo code for temperature
+// code for temperature
 void temperature() {
-  int temp = 20;
-  lcd.setCursor(0, 1);
-  lcd.print("temp(c):");
-  lcd.print(temp);
+   sensors.requestTemperatures(); 
 
-  Serial.print("Temperature : ");
-  Serial.print(temp);
-  Serial.println(" C");
+  //print the temperature in Celsius
+  // Serial.print("Temperature: ");
+  RawValue = sensors.getTempCByIndex(0);
+  float CorrectedValue = (((RawValue - RawLow) * ReferenceRange) / RawRange) + ReferenceLow;
+  total = total - readings[readIndex];
+  
+  // Add the new reading to the total
+  total = total + CorrectedValue;
+  
+  // Store the new reading in the array
+  readings[readIndex] = CorrectedValue;
+  
+  // Increment the index for the next reading
+  readIndex = (readIndex + 1) % numReadings;
+  
+  // Calculate the average
+  average = (float)total / numReadings;
 }
 
 
