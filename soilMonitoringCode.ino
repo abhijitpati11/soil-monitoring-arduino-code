@@ -1,5 +1,9 @@
 
 #include <LiquidCrystal.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#define ONE_WIRE_BUS 2
+OneWire oneWire(ONE_WIRE_BUS);
 
 // moisture sensor variables
 const int moistureSensorPin = A0;
